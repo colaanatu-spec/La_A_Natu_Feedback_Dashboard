@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La A Natu — Guest Feedback Dashboard 2023–2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f3; color: #2c2c2a; font-size: 14px; }
+.page { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+.brand { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid #e0ddd6; }
+.brand-logo { width: 44px; height: 44px; background: #1C3A2B; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 15px; }
+.brand-title { font-size: 20px; font-weight: 600; color: #1C3A2B; }
+.brand-sub { font-size: 12px; color: #888780; margin-top: 2px; }
+.section-label { font-size: 11px; font-weight: 600; color: #888780; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; margin-top: 28px; }
+.metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 4px; }
+.metric { background: white; border-radius: 10px; padding: 14px 16px; border: 1px solid #e8e6e0; }
+.metric-label { font-size: 11px; color: #888780; margin-bottom: 6px; }
+.metric-value { font-size: 26px; font-weight: 600; }
+.metric-sub { font-size: 11px; color: #b4b2a9; margin-top: 3px; }
+.mv-total { color: #1C3A2B; } .mv-pos { color: #3B6D11; } .mv-mix { color: #854F0B; }
+.mv-neg { color: #A32D2D; } .mv-sug { color: #5B4F8B; }
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 4px; }
+.chart-card { background: white; border-radius: 10px; border: 1px solid #e8e6e0; padding: 18px; }
+.chart-card.full { grid-column: 1 / -1; }
+.card-title { font-size: 13px; font-weight: 600; color: #2c2c2a; margin-bottom: 14px; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
+.legend span { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #888780; }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.filters { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+.filter-label { font-size: 12px; color: #888780; }
+.filter-btn { padding: 5px 12px; border-radius: 20px; border: 1px solid #d3d1c7; background: white; font-size: 12px; cursor: pointer; color: #444441; transition: all 0.15s; }
+.filter-btn:hover { border-color: #1C3A2B; color: #1C3A2B; }
+.filter-btn.active { background: #1C3A2B; color: white; border-color: #1C3A2B; }
+.issue-table { width: 100%; border-collapse: collapse; }
+.issue-table th { font-size: 11px; font-weight: 600; color: #888780; text-align: left; padding: 8px 10px; border-bottom: 1px solid #e8e6e0; }
+.issue-table td { padding: 10px 10px; border-bottom: 1px solid #f0ede6; font-size: 13px; vertical-align: middle; }
+.issue-table tr:hover td { background: #fafaf8; }
+.issue-table tr:last-child td { border-bottom: none; }
+.bar-wrap { position: relative; height: 6px; background: #f0ede6; border-radius: 3px; width: 80px; display: inline-block; vertical-align: middle; }
+.bar-fill { height: 100%; border-radius: 3px; }
+.badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-urgent { background: #FADBD8; color: #7D1E1E; }
+.badge-high   { background: #FAE5D3; color: #7D3C00; }
+.badge-medium { background: #FEF9E7; color: #7D6000; }
+.badge-low    { background: #EAFAF1; color: #1A5E2A; }
+.count-pill { display: inline-block; background: #1C3A2B; color: white; border-radius: 20px; padding: 2px 9px; font-size: 12px; font-weight: 600; min-width: 28px; text-align: center; }
+.highlight-box { background: #EAF3DE; border-left: 3px solid #3B6D11; border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 14px; }
+.highlight-box h4 { font-size: 12px; font-weight: 600; color: #27500A; margin-bottom: 6px; }
+.highlight-box ul { list-style: none; }
+.highlight-box ul li { font-size: 12px; color: #3B6D11; padding: 2px 0; }
+.highlight-box ul li::before { content: "✓ "; font-weight: 700; }
+.strength-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid #f0ede6; }
+.strength-row:last-child { border-bottom: none; }
+.strength-name { flex: 1; font-size: 13px; }
+.strength-bar-wrap { width: 160px; height: 8px; background: #f0ede6; border-radius: 4px; overflow: hidden; }
+.strength-bar { height: 100%; border-radius: 4px; background: #3B6D11; }
+.strength-count { width: 36px; text-align: right; font-size: 12px; font-weight: 600; color: #3B6D11; }
+.tab-row { display: flex; gap: 0; border-bottom: 1px solid #e8e6e0; margin-bottom: 18px; }
+.tab { padding: 9px 18px; font-size: 13px; cursor: pointer; color: #888780; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+.tab.active { color: #1C3A2B; border-bottom-color: #1C3A2B; font-weight: 600; }
+.tab:hover { color: #1C3A2B; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.note-box { background: #f5f0ff; border-left: 3px solid #8B6FBB; border-radius: 0 8px 8px 0; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; color: #4A3570; }
+.footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e8e6e0; font-size: 11px; color: #b4b2a9; text-align: center; }
+@media (max-width: 680px) {
+  .metrics { grid-template-columns: repeat(2,1fr); }
+  .charts-grid { grid-template-columns: 1fr; }
+  .charts-grid .chart-card.full { grid-column: auto; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="brand">
+    <div class="brand-logo">LAN</div>
+    <div>
+      <div class="brand-title">La A Natu — Guest Feedback Analysis</div>
+      <div class="brand-sub">ข้อมูลจริงจาก Google Reviews · Booking.com · Tripadvisor · Questionnaire &nbsp;|&nbsp; ปี 2023–2026 &nbsp;|&nbsp; ทั้งหมด 269 entries</div>
+    </div>
+  </div>
+
+  <div class="section-label">ภาพรวม</div>
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Entries ทั้งหมด</div>
+      <div class="metric-value mv-total">269</div>
+      <div class="metric-sub">4 แหล่ง · 2023–2026</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Positive</div>
+      <div class="metric-value mv-pos">115</div>
+      <div class="metric-sub">43% · ประทับใจ</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Mixed</div>
+      <div class="metric-value mv-mix">88</div>
+      <div class="metric-sub">33% · มีทั้งดีและติ</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Negative</div>
+      <div class="metric-value mv-neg">18</div>
+      <div class="metric-sub">7% · ต้องจัดการ</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Suggestion</div>
+      <div class="metric-value mv-sug">45</div>
+      <div class="metric-sub">17% · แนะนำ/ปรับปรุง</div>
+    </div>
+  </div>
+
+  <div class="section-label">วิเคราะห์เชิงลึก</div>
+  <div class="tab-row">
+    <div class="tab active" onclick="switchTab('issues')">Issues & Priority</div>
+    <div class="tab" onclick="switchTab('strengths')">จุดแข็ง</div>
+    <div class="tab" onclick="switchTab('charts')">Charts</div>
+    <div class="tab" onclick="switchTab('rooms')">Room Type</div>
+  </div>
+
+  <!-- TAB 1: Issues -->
+  <div id="tab-issues" class="tab-panel active">
+    <div class="filters">
+      <span class="filter-label">Priority:</span>
+      <button class="filter-btn active" onclick="filterIssues('all',this)">ทั้งหมด</button>
+      <button class="filter-btn" onclick="filterIssues('urgent',this)">Urgent</button>
+      <button class="filter-btn" onclick="filterIssues('high',this)">High</button>
+      <button class="filter-btn" onclick="filterIssues('medium',this)">Medium</button>
+      <button class="filter-btn" onclick="filterIssues('low',this)">Low</button>
+    </div>
+    <div class="chart-card" style="padding:0;overflow:hidden;">
+      <table class="issue-table">
+        <thead>
+          <tr>
+            <th style="width:28%">Issue (จากข้อมูลจริง)</th>
+            <th style="width:13%">Category</th>
+            <th style="width:9%">พบ (ครั้ง)</th>
+            <th style="width:10%">Priority</th>
+            <th style="width:40%">แนวทาง Service Design</th>
+          </tr>
+        </thead>
+        <tbody id="issueBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 2: Strengths -->
+  <div id="tab-strengths" class="tab-panel">
+    <div class="highlight-box">
+      <h4>Core Identity ที่ต้องรักษาไว้ในทุก Service Design</h4>
+      <ul>
+        <li>บรรยากาศ ความสงบ ธรรมชาติ — กล่าวถึงใน 65 entries (อันดับ 1)</li>
+        <li>การบริการพนักงาน อบอุ่น ใส่ใจ — 60 entries (อันดับ 2)</li>
+        <li>อาหารอร่อย อาหารเช้า ซีฟู้ด — 43 entries (อันดับ 3)</li>
+      </ul>
+    </div>
+    <div class="chart-card">
+      <div class="card-title">Positive Highlights — ถูกกล่าวถึงกี่ครั้ง (จากข้อมูลจริง)</div>
+      <div id="strengthList"></div>
+    </div>
+  </div>
+
+  <!-- TAB 3: Charts -->
+  <div id="tab-charts" class="tab-panel">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="card-title">Issues by Main Category</div>
+        <div class="legend">
+          <span><span class="legend-dot" style="background:#E24B4A"></span>Negative</span>
+          <span><span class="legend-dot" style="background:#EF9F27"></span>Mixed</span>
+          <span><span class="legend-dot" style="background:#639922"></span>Positive</span>
+          <span><span class="legend-dot" style="background:#8B6FBB"></span>Suggestion</span>
+        </div>
+        <div style="position:relative;height:280px;"><canvas id="catChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-title">Sentiment แยกตาม Platform</div>
+        <div class="legend">
+          <span><span class="legend-dot" style="background:#639922"></span>Positive</span>
+          <span><span class="legend-dot" style="background:#EF9F27"></span>Mixed</span>
+          <span><span class="legend-dot" style="background:#E24B4A"></span>Negative</span>
+          <span><span class="legend-dot" style="background:#8B6FBB"></span>Suggestion</span>
+        </div>
+        <div style="position:relative;height:280px;"><canvas id="sentChart"></canvas></div>
+      </div>
+      <div class="chart-card full">
+        <div class="card-title">Trend รายปี — Reviews by Sentiment (2023–2026)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#3B6D11;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#639922;display:inline-block;"></span>Positive</div>
+            <div style="position:relative;height:150px;"><canvas id="trendPos"></canvas></div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#854F0B;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#EF9F27;display:inline-block;"></span>Mixed</div>
+            <div style="position:relative;height:150px;"><canvas id="trendMix"></canvas></div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#A32D2D;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#E24B4A;display:inline-block;"></span>Negative</div>
+            <div style="position:relative;height:150px;"><canvas id="trendNeg"></canvas></div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#5B4F8B;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#8B6FBB;display:inline-block;"></span>Suggestion</div>
+            <div style="position:relative;height:150px;"><canvas id="trendSug"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: Rooms -->
+  <div id="tab-rooms" class="tab-panel">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="card-title">Entries แยก Room Type</div>
+        <div style="position:relative;height:280px;"><canvas id="roomChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-title">Sentiment แยก Room Type</div>
+        <div class="legend">
+          <span><span class="legend-dot" style="background:#639922"></span>Positive</span>
+          <span><span class="legend-dot" style="background:#EF9F27"></span>Mixed</span>
+          <span><span class="legend-dot" style="background:#E24B4A"></span>Negative</span>
+          <span><span class="legend-dot" style="background:#8B6FBB"></span>Suggestion</span>
+        </div>
+        <div style="position:relative;height:280px;"><canvas id="roomSentChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">La A Natu · Guest Feedback Analysis · ข้อมูลจริงจาก Review Tracker · Compiled June 2026 · For internal use only</div>
+</div>
+
+<script>
+// ── Data จากข้อมูลจริง ────────────────────────────────────────────
+const issues = [
+  { issue:"แสงสว่างทางเดินไม่เพียงพอ", cat:"Facilities", count:9, pct:100, priority:"urgent", action:"เพิ่ม Pathway Lighting + ไฟบริเวณทางเดินทุกจุด" },
+  { issue:"อาหารเช้าเมนูน้อย / รอนาน", cat:"Food & Beverage", count:9, pct:100, priority:"urgent", action:"ขยายเมนู BF + ปรับ Workflow ครัว + เริ่มเสิร์ฟ 7am" },
+  { issue:"เสียงรบกวนจากชั้นบน", cat:"Room & Comfort", count:8, pct:89, priority:"urgent", action:"ตรวจฉนวนเสียง + กำหนด Quiet Hours ชัดเจน" },
+  { issue:"มด / แมลงในห้องพัก", cat:"Room & Comfort", count:8, pct:89, priority:"urgent", action:"Pest Control รายเดือน + ตรวจก่อน CI ทุกห้อง" },
+  { issue:"ประตู / กุญแจปิดยาก", cat:"Room & Comfort", count:6, pct:67, priority:"high", action:"PM ทุกห้องก่อน CI + HK เช็คทุกวัน" },
+  { issue:"สระน้ำ / Plunge Pool ไม่อุ่น", cat:"Facilities", count:6, pct:67, priority:"high", action:"ตั้งระบบ Thermostat อัตโนมัติ + แจ้งแขกวิธีปรับ" },
+  { issue:"กลิ่นห้องน้ำ", cat:"Room & Comfort", count:4, pct:44, priority:"high", action:"ตรวจท่อน้ำทิ้ง + วางอโรมาในห้อง" },
+  { issue:"ไม่เหมาะสำหรับผู้สูงอายุ / รถเข็น", cat:"Facilities", count:4, pct:44, priority:"high", action:"เพิ่มราวจับ + ปรับ Accessibility ทั่วรีสอร์ท" },
+  { issue:"ราคาสูงเมื่อเทียบกับสิ่งที่ได้รับ", cat:"Value for Money", count:4, pct:44, priority:"high", action:"ทบทวน Value Proposition + เพิ่ม Perceived Value" },
+  { issue:"หมอนสูง / แข็งเกินไป", cat:"Room & Comfort", count:3, pct:33, priority:"medium", action:"เตรียมหมอน 2 แบบ (แข็ง/นุ่ม) ให้แขกเลือก" },
+  { issue:"ไม่แนะนำ Activity / CI ไม่ครบ", cat:"Service", count:3, pct:33, priority:"medium", action:"สร้าง CI Script มาตรฐาน + Welcome Booklet" },
+  { issue:"หาทางเข้าโรงแรมยาก", cat:"Location", count:2, pct:22, priority:"low", action:"ส่ง Google Maps pin + Pre-arrival guide ทุก booking" },
+  { issue:"ต้องการ Spa / Massage", cat:"Facilities", count:1, pct:11, priority:"low", action:"พิจารณา In-villa Massage Package" },
+];
+
+const badgeMap = { urgent:"badge-urgent", high:"badge-high", medium:"badge-medium", low:"badge-low" };
+const labelMap = { urgent:"Urgent", high:"High", medium:"Medium", low:"Low" };
+const barColors = { urgent:"#E24B4A", high:"#EF9F27", medium:"#F4D03F", low:"#639922" };
+
+function renderIssues(filter) {
+  const tbody = document.getElementById('issueBody');
+  const rows = filter === 'all' ? issues : issues.filter(i => i.priority === filter);
+  tbody.innerHTML = rows.map(i => `
+    <tr>
+      <td style="font-weight:500">${i.issue}</td>
+      <td style="color:#888780;font-size:12px">${i.cat}</td>
+      <td><span class="count-pill">${i.count}</span></td>
+      <td><span class="badge ${badgeMap[i.priority]}">${labelMap[i.priority]}</span></td>
+      <td style="color:#444441;font-size:12px">
+        <div class="bar-wrap"><div class="bar-fill" style="width:${i.pct}%;background:${barColors[i.priority]}"></div></div>
+        <span style="margin-left:8px">${i.action}</span>
+      </td>
+    </tr>`).join('');
+}
+renderIssues('all');
+
+function filterIssues(f, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderIssues(f);
+}
+
+const strengths = [
+  { name:"บรรยากาศ / ความสงบ / ธรรมชาติ", count:65 },
+  { name:"การบริการพนักงาน (อบอุ่น ใส่ใจ)", count:60 },
+  { name:"อาหารอร่อย (อาหารเช้า / ซีฟู้ด)", count:43 },
+  { name:"ห้องพัก / Design / สะอาด", count:38 },
+  { name:"วิว / ทำเล / หาดส่วนตัว", count:33 },
+  { name:"Privacy / ความโรแมนติก", count:17 },
+  { name:"Welcome / รายละเอียดเล็ก ๆ น้อย ๆ", count:8 },
+  { name:"Activities (โยคะ ดำนา ใส่บาตร)", count:7 },
+];
+const maxS = strengths[0].count;
+document.getElementById('strengthList').innerHTML = strengths.map(s => `
+  <div class="strength-row">
+    <div class="strength-name">${s.name}</div>
+    <div class="strength-bar-wrap"><div class="strength-bar" style="width:${Math.round(s.count/maxS*100)}%"></div></div>
+    <div class="strength-count">${s.count}</div>
+  </div>`).join('');
+
+function switchTab(id) {
+  const tabs = ['issues','strengths','charts','rooms'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', tabs[i]===id));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+const textColor = '#888780';
+const gridColor = 'rgba(0,0,0,0.06)';
+
+// Category chart — ข้อมูลจริง
+new Chart(document.getElementById('catChart'), {
+  type:'bar',
+  data:{
+    labels:['Room &\nComfort','Service &\nHospitality','Food &\nBeverage','Facilities\n& Activities','Environment\n& Location','Overall\nExperience','Value for\nMoney'],
+    datasets:[
+      {label:'Negative',   data:[7,5,1,2,0,2,1],   backgroundColor:'#E24B4A', stack:'a'},
+      {label:'Mixed',      data:[14,6,9,13,9,27,1],  backgroundColor:'#EF9F27', stack:'a'},
+      {label:'Positive',   data:[9,11,7,6,24,51,0],  backgroundColor:'#639922', stack:'a'},
+      {label:'Suggestion', data:[10,3,1,11,3,14,1],  backgroundColor:'#8B6FBB', stack:'a'},
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}`}}},
+    scales:{
+      x:{stacked:true, ticks:{color:textColor,font:{size:10}}, grid:{color:gridColor}},
+      y:{stacked:true, ticks:{color:textColor,font:{size:10}}, grid:{color:gridColor}}
+    }
+  }
+});
+
+// Platform x Sentiment — ข้อมูลจริง
+new Chart(document.getElementById('sentChart'), {
+  type:'bar',
+  data:{
+    labels:['Google\n(59)','Booking.com\n(17)','Questionnaire\n(192)','Tripadvisor\n(1)'],
+    datasets:[
+      {label:'Positive',   data:[35,5,74,1],  backgroundColor:'#639922', stack:'b'},
+      {label:'Mixed',      data:[18,12,58,0],  backgroundColor:'#EF9F27', stack:'b'},
+      {label:'Negative',   data:[6,0,12,0],   backgroundColor:'#E24B4A', stack:'b'},
+      {label:'Suggestion', data:[0,0,45,0],   backgroundColor:'#8B6FBB', stack:'b'},
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}`}}},
+    scales:{
+      x:{stacked:true, ticks:{color:textColor,font:{size:10}}, grid:{color:gridColor}},
+      y:{stacked:true, ticks:{color:textColor,font:{size:10}}, grid:{color:gridColor}}
+    }
+  }
+});
+
+// Trend แยก 4 กราฟ — ข้อมูลจริง
+const trendLabels = ['2023','2024','2025','2026*'];
+const trendOpts = () => ({
+  responsive:true, maintainAspectRatio:false,
+  plugins:{legend:{display:false}, tooltip:{callbacks:{label: ctx => ` ${ctx.parsed.y} entries`}}},
+  scales:{
+    x:{ticks:{color:textColor,font:{size:10}}, grid:{color:gridColor}},
+    y:{beginAtZero:true, ticks:{color:textColor,font:{size:10},stepSize:10}, grid:{color:gridColor}}
+  }
+});
+new Chart(document.getElementById('trendPos'), {
+  type:'line',
+  data:{labels:trendLabels,datasets:[{data:[1,26,61,26],borderColor:'#639922',backgroundColor:'rgba(99,153,34,0.1)',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#639922'}]},
+  options:trendOpts()
+});
+new Chart(document.getElementById('trendMix'), {
+  type:'line',
+  data:{labels:trendLabels,datasets:[{data:[5,15,43,24],borderColor:'#EF9F27',backgroundColor:'rgba(239,159,39,0.1)',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#EF9F27'}]},
+  options:trendOpts()
+});
+new Chart(document.getElementById('trendNeg'), {
+  type:'line',
+  data:{labels:trendLabels,datasets:[{data:[0,6,7,5],borderColor:'#E24B4A',backgroundColor:'rgba(226,75,74,0.1)',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#E24B4A'}]},
+  options:trendOpts()
+});
+new Chart(document.getElementById('trendSug'), {
+  type:'line',
+  data:{labels:trendLabels,datasets:[{data:[0,9,28,8],borderColor:'#8B6FBB',backgroundColor:'rgba(139,111,187,0.1)',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:'#8B6FBB'}]},
+  options:trendOpts()
+});
+
+// Room Type — ข้อมูลจริง
+new Chart(document.getElementById('roomChart'), {
+  type:'doughnut',
+  data:{
+    labels:['Beachfront Villas\n+ Plunge Pool (67)','Beachfront Suite\n+ Plunge Pool (60)','Rice Field Villa (31)','Duplex 2BR\n+ Pool (27)','Sea View\nLoft Suite (19)','Rice Field\nFamily Villa (4)'],
+    datasets:[{
+      data:[67,60,31,27,19,4],
+      backgroundColor:['#1C3A2B','#2D5E40','#4A8C62','#639922','#EF9F27','#B4B2A9'],
+      borderWidth:0
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'right',labels:{color:textColor,font:{size:10},boxWidth:10,padding:6}},
+      tooltip:{callbacks:{label: ctx => ` ${ctx.label}: ${ctx.parsed} entries`}}
+    }
+  }
+});
+
+// Room x Sentiment — ข้อมูลจริง
+new Chart(document.getElementById('roomSentChart'), {
+  type:'bar',
+  data:{
+    labels:['Beachfront Villa','Beachfront Suite','Rice Field Villa','Duplex 2BR','Sea View Loft','RF Family Villa'],
+    datasets:[
+      {label:'Positive',   data:[31,19,13,14,10,1], backgroundColor:'#639922', stack:'r'},
+      {label:'Mixed',      data:[23,16,8,6,5,2],    backgroundColor:'#EF9F27', stack:'r'},
+      {label:'Negative',   data:[3,6,1,3,0,1],      backgroundColor:'#E24B4A', stack:'r'},
+      {label:'Suggestion', data:[10,16,9,4,4,0],    backgroundColor:'#8B6FBB', stack:'r'},
+    ]
+  },
+  options:{
+    indexAxis:'y',
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.x}`}}},
+    scales:{
+      x:{stacked:true, ticks:{color:textColor,font:{size:10}}, grid:{color:gridColor}},
+      y:{stacked:true, ticks:{color:textColor,font:{size:11}}, grid:{display:false}}
+    }
+  }
+});
+</script>
+</body>
+</html>
